@@ -373,11 +373,12 @@ function render(speak) {
     burst(innerWidth / 2, innerHeight / 3, 140);
   } else {
     $("sub").textContent = `Задание ${st.step + 1} из ${STEPS.length}`;
-    s.innerHTML = `<div class="label">Где искать задание ${st.step + 1}</div>
+    const task = esc(STEPS[st.step].name);
+    s.innerHTML = `<div class="label">Где искать задание «${task}»</div>
       <div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button>${hint ? '<button class="link" id="hintbtn">Не могу найти</button>' : ""}</div>
       <div id="hintbox"></div>
-      <div class="label">Ответ на задание ${st.step + 1}</div>
+      <div class="label">Ответ на задание «${task}»</div>
       <input id="in" autocomplete="off" autocapitalize="off" placeholder="Ответ..."><br>
       <button class="go" id="go">Проверить</button><div class="msg" id="msg"></div>`;
   }
