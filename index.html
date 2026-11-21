@@ -191,29 +191,12 @@ if (location.hash === "#reset") { st = { step: -1, wrong: 0 }; history.replaceSt
 const save = () => store(KEY, JSON.stringify(st));
 save();
 
-// ---------- sound: an original music-box waltz, effects and the narrator, all in the browser ----------
-let ac, master, musicGain, sfxGain, musicOn = load(MUSIC_KEY) !== "off", seqTimer, nextT = 0, evIdx = 0, loopStart = 0;
+// ---------- sound: festive film tracks (music/*.mp3) in a loop, effects and the narrator, all in the browser ----------
+let ac, master, musicGain, sfxGain, musicOn = load(MUSIC_KEY) !== "off", track, trackIdx = 0;
+const TRACKS = ["music/1.mp3", "music/2.mp3", "music/3.mp3", "music/4.mp3"];
 const BEAT = 0.42, NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const midi = n => 12 * (+n.slice(-1) + 1) + NOTE[n[0]] + (n[1] === "#" ? 1 : 0);
 const hz = m => 440 * Math.pow(2, (m - 69) / 12);
-const MELODY = [
-  [["G4", 1], ["B4", 1], ["E5", 1]], [["D5", 1.5], ["C5", .5], ["B4", 1]], [["A4", 1], ["C5", 1], ["E5", 1]], [["F#5", 2], ["D#5", 1]],
-  [["E5", 1], ["G5", 1], ["B5", 1]], [["A5", 1.5], ["G5", .5], ["F#5", 1]], [["G5", 1], ["E5", 1], ["C5", 1]], [["B4", 3]],
-  [["C5", 1], ["E5", 1], ["A5", 1]], [["G5", 1.5], ["F#5", .5], ["E5", 1]], [["D#5", 1], ["F#5", 1], ["B5", 1]], [["A5", 2], ["F#5", 1]],
-  [["G5", 1], ["E5", 1], ["B4", 1]], [["C5", 1], ["A4", 1], ["F#4", 1]], [["B4", 1.5], ["D#5", .5], ["F#5", 1]], [["E5", 3]],
-];
-const CHORDS = { Em: ["E3", "G4", "B4"], G: ["G3", "B4", "D5"], Am: ["A3", "C5", "E5"], B7: ["B2", "D#4", "A4"], D: ["D3", "F#4", "A4"], C: ["C3", "E4", "G4"] };
-const BARS = ["Em", "G", "Am", "B7", "Em", "D", "C", "B7", "Am", "Em", "B7", "D", "Em", "Am", "B7", "Em"];
-const EVENTS = [];  // [beat, midi, dur, vol]
-MELODY.forEach((bar, b) => {
-  let t = b * 3;
-  bar.forEach(([n, d]) => { EVENTS.push([t, midi(n), d, .22]); t += d; });
-  const [bass, c1, c2] = CHORDS[BARS[b]];
-  EVENTS.push([b * 3, midi(bass), 3, .16]);
-  for (const k of [1, 2]) { EVENTS.push([b * 3 + k, midi(c1), 1, .06]); EVENTS.push([b * 3 + k, midi(c2), 1, .06]); }
-});
-EVENTS.sort((a, b) => a[0] - b[0]);
-const LOOP = 48;
 
 function audioInit() {
   if (ac) return;
@@ -224,7 +207,7 @@ function audioInit() {
   verb.buffer = ir;
   const wet = ac.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(master);
   musicGain = ac.createGain(); musicGain.gain.value = musicOn ? .5 : 0;
-  musicGain.connect(master); musicGain.connect(verb);
+  musicGain.connect(master);
   sfxGain = ac.createGain(); sfxGain.gain.value = .7; sfxGain.connect(master); sfxGain.connect(verb);
 }
 
@@ -238,19 +221,13 @@ function bell(m, t, dur, vol, out) {  // music-box tine: fundamental + a soft hi
   }
 }
 
-function schedule() {
-  while (nextT < ac.currentTime + .4) {
-    const [b, m, d, v] = EVENTS[evIdx];
-    bell(m, loopStart + b * BEAT, d, v, musicGain);
-    evIdx++;
-    if (evIdx >= EVENTS.length) { evIdx = 0; loopStart += LOOP * BEAT; }
-    nextT = loopStart + EVENTS[evIdx][0] * BEAT;
-  }
-}
-
 function musicStart() {
   audioInit(); ac.resume();
-  if (!seqTimer) { loopStart = ac.currentTime + .2; evIdx = 0; nextT = loopStart; seqTimer = setInterval(schedule, 100); schedule(); }
+  if (track) return;
+  track = new Audio(TRACKS[0]);
+  track.onended = () => { trackIdx = (trackIdx + 1) % TRACKS.length; track.src = TRACKS[trackIdx]; track.play(); };
+  ac.createMediaElementSource(track).connect(musicGain);
+  track.play();
 }
 
 function setMusic(on) {
