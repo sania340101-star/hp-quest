@@ -33,5 +33,5 @@ window.QUEST = {
     {"name": "Нападение", "answer": ["Экспекто Патронум", "Экспекто Патронус", "Expecto Patronum"], "place": "Дары Смерти сложены туда,\nс чем каждый первокурсник едет в Хогвартс с вокзала Кингс-Кросс.", "hint": "Чемодан"}
   ],
   "final": "Шалость удалась! Все десять заданий пройдены, Дары Смерти снова в надёжных руках, и новогодняя ёлка Хогвартса сияет ярче прежнего. С Новым годом, Кэтти!",
-  "final_fx": [{"type": "glow", "x": 84, "y": 40, "w": 40, "h": 75, "color": "#ffd36e", "opacity": 0.4}, {"type": "sparkle", "x": 84, "y": 40, "spread": 14, "count": 24, "color": "#ffd36e"}, {"type": "sparkle", "x": 35, "y": 45, "spread": 30, "count": 20, "color": "#fff3c0"}, {"type": "flame", "x": 95, "y": 84, "spread": 1, "count": 3, "color": "#ffb040"}, {"type": "snow", "count": 25}]
+  "final_fx": [{"type": "glow", "x": 75, "y": 8, "w": 14, "h": 18, "color": "#fff2a0", "opacity": 0.7}, {"type": "glow", "x": 74, "y": 55, "w": 42, "h": 85, "color": "#ffd36e", "opacity": 0.35}, {"type": "sparkle", "x": 74, "y": 55, "spread": 14, "count": 26, "color": "#ffd36e"}, {"type": "sparkle", "x": 25, "y": 40, "spread": 18, "count": 14, "color": "#fff3c0"}, {"type": "snow", "count": 25}]
 };
