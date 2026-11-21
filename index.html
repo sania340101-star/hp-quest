@@ -74,6 +74,16 @@
   .comicbox { position: relative; margin-top: 10px; border-radius: 4px; border: 3px solid var(--edge); box-shadow: 0 3px 12px #3a221066; overflow: hidden; }
   .comic { display: block; width: 100%; animation: kb 14s ease-in-out infinite alternate; }
   @keyframes kb { from { transform: scale(1); } to { transform: scale(1.08) translate(-1.5%, -1%); } }
+  .comicbox { max-width: calc(34vh * 4 / 3); margin-left: auto; margin-right: auto; }  /* 4:3 pictures, at most a third of the screen */
+  /* a prologue page fits one phone screen: picture, text and the button without scrolling (Alex 97020) */
+  body.story { padding-top: 66px; padding-bottom: 8px; }
+  body.story .map { padding: 10px 14px 14px; }
+  body.story .head, body.story .map > .hallows, body.story .progress { display: none; }
+  body.story h1 { font-size: 24px; margin-top: 0; }
+  body.story .sub { font-size: 15px; margin-bottom: 0; }
+  body.story .riddle { font-size: clamp(17px, 2.9vh, 23px); line-height: 1.25; padding: 4px 2px; margin: 6px 0 2px; min-height: 0; }
+  body.story .tools { margin-bottom: 0; }
+  body.story .go { margin-top: 6px; }
   .panelfx { position: absolute; inset: 0; pointer-events: none; }
   .panelfx i { position: absolute; border-radius: 50%; }
   @keyframes ink { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
@@ -421,6 +431,7 @@ function startFx() {
 function render(speak) {
   $("progress").innerHTML = STEPS.map((_, i) => HALLOW.replace("<svg", `<svg class="${i < st.step ? "done" : i === st.step ? "now" : ""}"`)).join("");
   const s = $("screen"), [name, text, hint] = current();
+  document.body.classList.toggle("story", inPrologue());
   if (inPrologue()) {  // the comic before the oath, one page per tap
     const k = st.pro || 0;
     $("sub").textContent = `Пролог · ${k + 1} из ${PRO.length}`;
