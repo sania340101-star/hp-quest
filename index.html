@@ -54,7 +54,7 @@
 
   .head { font-family: var(--title); font-size: 13px; letter-spacing: 3px; color: #6b4a22; }
   h1 { font-family: var(--title); font-size: 34px; line-height: 1.05; margin: 6px 0 2px; color: var(--red);
-       text-shadow: 0 1px 0 #fff6, 0 0 1px #7d1a12; }
+       text-shadow: 0 1px 0 #fff6, 0 0 1px #7d1a12; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   .sub { font-style: italic; font-size: 17px; color: #5d3b18; margin-bottom: 12px; min-height: 22px; }
   .hallows { width: 64px; height: 64px; display: block; margin: 0 auto; filter: drop-shadow(0 0 6px #ffd36e66); }
 
@@ -411,6 +411,18 @@ function check() {
   $("msg").textContent = st.step < 0 ? WRONG_OATH[(st.wrong - 1) % WRONG_OATH.length] : WRONG[(st.wrong - 1) % WRONG.length];
   const c = $("card"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
   $("in").select();
+}
+
+// parents: hold the title 2 s to start over (no visible button, so a child can't wipe the progress by accident)
+const h1 = document.querySelector("h1");
+let holdT;
+h1.onpointerdown = () => { holdT = setTimeout(askReset, 2000); };
+for (const ev of ["pointerup", "pointerleave", "pointercancel"]) h1.addEventListener(ev, () => clearTimeout(holdT));
+h1.oncontextmenu = e => e.preventDefault();
+function askReset() {
+  $("sub").innerHTML = 'Начать квест сначала? <button class="link" id="rsYes">Да</button> <button class="link" id="rsNo">Нет</button>';
+  $("rsYes").onclick = () => { st = { step: -1, wrong: 0 }; save(); render(true); };
+  $("rsNo").onclick = () => render(false);
 }
 
 $("music").classList.toggle("off", !musicOn);
