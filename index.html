@@ -518,6 +518,15 @@ function askReset() {
   $("rsYes").onclick = () => { st = { step: -1, wrong: 0 }; save(); render(true); };
   $("rsNo").onclick = () => render(false);
 }
+// parents' test: 5 quick taps on the title skip one step (a prologue page, the oath or a task) (Alex 97028)
+let taps = [];
+h1.addEventListener("click", () => {
+  const now = Date.now(); taps = taps.filter(t => now - t < 2000).concat(now);
+  if (taps.length < 5 || st.step >= STEPS.length) return;
+  taps = [];
+  if (inPrologue()) st.pro = (st.pro || 0) + 1; else st = { step: st.step + 1, wrong: 0, pro: st.pro };
+  save(); sfx("whoosh"); render(true);
+});
 // the #reset link opened in a tab that already has the quest changes only the hash, the page does not reload
 addEventListener("hashchange", () => {
   if (location.hash !== "#reset") return;
