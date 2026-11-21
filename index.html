@@ -82,6 +82,8 @@
   }
   input:focus { background: #fff8e6; border-bottom-color: var(--red); }
   input::placeholder { color: #8a6a44; font-style: italic; }
+  input + br + input { margin-top: 8px; }
+  input.right { background: #e3f1d499; border-bottom-color: #3d7a2a; }
   .go {
     font: 700 19px var(--title); letter-spacing: 1.5px; margin-top: 14px; padding: 12px 30px; cursor: pointer;
     color: #fbe9c2; border: 0; border-radius: 30px;
@@ -360,7 +362,7 @@ function render(speak) {
     $("sub").textContent = "Карта откроется лишь тому, кто знает клятву";
     s.innerHTML = `<div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button></div>
-      <input id="in" autocomplete="off" autocapitalize="off" placeholder="Клятва..."><br>
+      <input class="ans" autocomplete="off" autocapitalize="off" placeholder="Клятва..."><br>
       <button class="go" id="go">Открыть карту</button><div class="msg" id="msg"></div>`;
   } else if (st.step >= STEPS.length) {
     $("sub").textContent = "Шалость удалась!";
@@ -373,20 +375,20 @@ function render(speak) {
     burst(innerWidth / 2, innerHeight / 3, 140);
   } else {
     $("sub").textContent = `Задание ${st.step + 1} из ${STEPS.length}`;
-    const task = esc(STEPS[st.step].name);
+    const task = esc(STEPS[st.step].name), parts = STEPS[st.step].parts || [{ label: "Ответ" }];
     s.innerHTML = `<div class="label">Где искать задание «${task}»</div>
       <div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button>${hint ? '<button class="link" id="hintbtn">Не могу найти</button>' : ""}</div>
       <div id="hintbox"></div>
       <div class="label">Ответ на задание «${task}»</div>
-      <input id="in" autocomplete="off" autocapitalize="off" placeholder="Ответ..."><br>
+      ${parts.map(p => `<input class="ans" autocomplete="off" autocapitalize="off" placeholder="${esc(p.label)}...">`).join("<br>")}<br>
       <button class="go" id="go">Проверить</button><div class="msg" id="msg"></div>`;
   }
   $("again").onclick = () => say(name, st.step >= STEPS.length ? Q.final + " " + text : text);
   if ($("hintbtn")) $("hintbtn").onclick = () => { $("hintbox").innerHTML = `<div class="hint">${esc(hint)}</div>`; };
   if ($("go")) {
     $("go").onclick = check;
-    $("in").onkeydown = e => { if (e.key === "Enter") check(); };
+    for (const i of document.querySelectorAll(".ans")) i.onkeydown = e => { if (e.key === "Enter") check(); };
   }
   if (speak) {
     if (st.step >= STEPS.length) { say("final", Q.final); voice.onended = () => { speaking = false; say(name, text); }; }
@@ -395,9 +397,16 @@ function render(speak) {
 }
 
 function check() {
-  const v = norm($("in").value);
-  if (!v) return;
-  const ok = st.step < 0 ? Q.oath.map(norm).includes(v) : STEPS[st.step].answer.map(norm).includes(v);
+  const ins = [...document.querySelectorAll(".ans")], vs = ins.map(i => norm(i.value));
+  if (!vs.some(Boolean)) return;
+  const S = STEPS[st.step];
+  // the next task's name always passes; a sheet with several answers ("parts") needs every field right
+  let ok = st.step < 0 ? Q.oath.map(norm).includes(vs[0]) : vs.some(v => S.answer.map(norm).includes(v)), good = [];
+  if (!ok && S && S.parts) {
+    good = S.parts.map((p, i) => p.answer.map(norm).includes(vs[i]));
+    ins.forEach((el, i) => el.classList.toggle("right", good[i]));
+    ok = good.every(Boolean);
+  }
   if (ok) {
     const r = $("go").getBoundingClientRect();
     burst(r.left + r.width / 2, r.top, 80); sfx("ok");
@@ -408,9 +417,11 @@ function check() {
     return;
   }
   st.wrong++; save(); sfx("bad");
-  $("msg").textContent = st.step < 0 ? WRONG_OATH[(st.wrong - 1) % WRONG_OATH.length] : WRONG[(st.wrong - 1) % WRONG.length];
+  const right = good.filter(Boolean).length;
+  $("msg").textContent = st.step < 0 ? WRONG_OATH[(st.wrong - 1) % WRONG_OATH.length]
+    : right ? `Верно ${right} из ${good.length}! Остальное ещё не то.` : WRONG[(st.wrong - 1) % WRONG.length];
   const c = $("card"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
-  $("in").select();
+  (ins.find(i => !i.classList.contains("right")) || ins[0]).select();
 }
 
 // parents: hold the title 2 s to start over (no visible button, so a child can't wipe the progress by accident)

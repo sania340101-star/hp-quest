@@ -1,6 +1,7 @@
 // Quest setup. Plain JSON after "window.QUEST =", gen_audio.py reads it too: after editing texts run
 //   py -3 gen_audio.py
-// Each step is one task sheet: its name, the answer written on it (= the next sheet's name, several spellings allowed),
+// Each step is one task sheet: its name, the answer written on it (= the next sheet's name, several spellings allowed;
+// "parts" = a sheet with several answers on the parents' answer list, one field each, all must be right),
 // then the riddle of the place where the next sheet is hidden. "start" is the riddle for the first sheet;
 // the last step's place is where the gift is.
 // Hiding places: 1 pillow, 2 sock drawer, 3 fridge, 4 bathroom mirror, 5 pot, 6 bookshelf, 7 flower pot,
@@ -11,9 +12,9 @@ window.QUEST = {
   "start": "Первый след ведёт туда,\nгде каждую ночь ты отправляешься в страну снов.\nЗагляни под то, на чём лежит твоя голова.",
   "steps": [
     {"name": "Дырявый котёл", "answer": ["Косой переулок"], "place": "Добби стал свободным, когда получил меня в подарок.\nИщи там, где живут мои братья — по двое, парами.", "hint": "Ящик с носками"},
-    {"name": "Косой переулок", "answer": ["Хогвартс-экспресс", "Хогвардс экспресс"], "place": "Здесь вечная зима, как в Азкабане,\nно вместо дементоров — молоко и сыр.\nИщи на дверце.", "hint": "Холодильник"},
+    {"name": "Косой переулок", "answer": ["Хогвартс-экспресс", "Хогвардс экспресс"], "parts": [{"label": "Ряд 1", "answer": ["Сова Букля"]}, {"label": "Ряды 2-3", "answer": ["Волшебная палочка"]}, {"label": "Ряды 4-5", "answer": ["Ежедневный пророк"]}],"place": "Здесь вечная зима, как в Азкабане,\nно вместо дементоров — молоко и сыр.\nИщи на дверце.", "hint": "Холодильник"},
     {"name": "Хогвартс-экспресс", "answer": ["Хогвартс", "Хогвардс", "47"], "place": "Зеркало Еиналеж показывает самое заветное желание.\nА это зеркало каждое утро видит, как ты чистишь зубы.", "hint": "Зеркало в ванной"},
-    {"name": "Хогвартс", "answer": ["Комната", "Выручай-комната"], "place": "Снейп варил бы в нём зелья,\nа дома в нём варят суп.", "hint": "Кастрюля на кухне"},
+    {"name": "Хогвартс", "answer": ["Комната", "Выручай-комната"], "parts": [{"label": "Орёл", "answer": ["Когтевран"]}, {"label": "Змея", "answer": ["Слизерин"]}, {"label": "Барсук", "answer": ["Пуффендуй"]}, {"label": "Лев", "answer": ["Гриффиндор"]}],"place": "Снейп варил бы в нём зелья,\nа дома в нём варят суп.", "hint": "Кастрюля на кухне"},
     {"name": "Комната", "answer": ["Карта", "Карта Мародёров"], "place": "Среди многих историй спряталась одна —\nпро мальчика со шрамом в виде молнии.", "hint": "Книжная полка, книга про Гарри Поттера"},
     {"name": "Карта", "answer": ["Запретная секция"], "place": "Профессор Стебль поливала бы меня на уроке травологии.\nЗагляни под мой горшок.", "hint": "Цветок в горшке"},
     {"name": "Запретная секция", "answer": ["Запретный лес"], "place": "За круглым окном крутится вихрь,\nкак в каминной сети, только вместо пепла — пена.", "hint": "Стиральная машина"},
