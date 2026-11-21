@@ -71,7 +71,11 @@
   .riddle { font-family: var(--hand); font-size: 25px; line-height: 1.35; color: #2b1606; white-space: pre-line;
             margin: 8px 0 6px; padding: 14px 6px; min-height: 90px; position: relative; }
   .riddle span { opacity: 0; animation: ink .5s forwards; }
-  .comic { display: block; width: 100%; border-radius: 4px; border: 3px solid var(--edge); box-shadow: 0 3px 12px #3a221066; margin-top: 10px; }
+  .comicbox { position: relative; margin-top: 10px; border-radius: 4px; border: 3px solid var(--edge); box-shadow: 0 3px 12px #3a221066; overflow: hidden; }
+  .comic { display: block; width: 100%; animation: kb 14s ease-in-out infinite alternate; }
+  @keyframes kb { from { transform: scale(1); } to { transform: scale(1.08) translate(-1.5%, -1%); } }
+  .panelfx { position: absolute; inset: 0; pointer-events: none; }
+  .panelfx i { position: absolute; border-radius: 50%; }
   @keyframes ink { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
   .tools { display: flex; justify-content: center; gap: 18px; margin-bottom: 12px; }
   .link { font: italic 17px var(--serif); color: #5d3b18; background: none; border: 0; padding: 4px; cursor: pointer;
@@ -359,13 +363,68 @@ function current() {  // [audio name, riddle, hint] of what is on screen now
   return [`place${st.step}`, STEPS[st.step - 1].place, STEPS[st.step - 1].hint];
 }
 
+// comic pictures come alive like the Dobby story: a slow zoom plus glows, candle flames, sparkles, fireworks, snow
+// and fog at the spots listed in quest.js ("fx", x/y/spread in % of the picture)
+const FX = Object.fromEntries([...PRO.map(p => [p.img, p.fx]), [Q.final_img, Q.final_fx]]);
+const comic = src => `<div class="comicbox"><img class="comic" src="${src}" alt=""><div class="panelfx" data-src="${src}"></div></div>`;
+let fxParts = [];
+function startFx() {
+  fxParts = [];
+  const box = document.querySelector(".panelfx"); if (!box) return;
+  const rnd = (c, s) => c + (Math.random() - .5) * 2 * (s || 0);
+  const dot = (x, y, sz, color, extra = {}) => {
+    const el = document.createElement("i");
+    Object.assign(el.style, { left: x + "%", top: y + "%", width: sz + "px", height: sz + "px", background: color,
+                              boxShadow: `0 0 ${sz * 3}px ${sz * .8}px ${color}`, ...extra });
+    box.appendChild(el); return el;
+  };
+  for (const h of FX[box.dataset.src] || []) {
+    const n = h.count || 1, ph = () => Math.random() * 6.28;
+    if (h.type === "glow") {
+      const el = dot(h.x - h.w / 2, h.y - h.h / 2, 0, "transparent", { width: h.w + "%", height: h.h + "%", boxShadow: "none",
+        background: `radial-gradient(ellipse, ${h.color} 5%, ${h.color}80 30%, transparent 70%)`, opacity: h.opacity || .45, mixBlendMode: "screen" });
+      fxParts.push({ el, type: "glow", op: h.opacity || .45, ph: ph() });
+    }
+    if (h.type === "fog") {
+      const el = dot(h.x - h.w / 2, h.y - h.h / 2, 0, "transparent", { width: h.w + "%", height: h.h + "%", boxShadow: "none",
+        background: `radial-gradient(ellipse, ${h.color} 10%, ${h.color}80 40%, transparent 70%)`, opacity: .5 });
+      fxParts.push({ el, type: "fog", x: h.x - h.w / 2, ph: ph() });
+    }
+    for (let i = 0; i < n && ["flame", "sparkle", "snow", "firework"].includes(h.type); i++) {
+      const x = h.type === "snow" ? Math.random() * 100 : rnd(h.x, h.spread), y = h.type === "snow" ? Math.random() * 100 : rnd(h.y, h.spread);
+      const sz = h.type === "flame" ? 3 + Math.random() * 3 : h.type === "snow" ? 2 + Math.random() * 3 : 3 + Math.random() * 4;
+      const color = h.type === "snow" ? "#fff" : Array.isArray(h.color) ? h.color[i % h.color.length] : h.color;
+      fxParts.push({ el: dot(x, y, sz, color, { opacity: 0 }), type: h.type, x, y, ox: x, oy: y, ph: ph(), sp: .6 + Math.random() * .8, h });
+    }
+  }
+}
+(function fxLoop(ms) {
+  const t = ms / 1000;
+  for (const p of fxParts) {
+    const s = p.el.style;
+    if (p.type === "glow") s.opacity = p.op * (.6 + .4 * Math.sin(t * 1.5 + p.ph));
+    if (p.type === "fog") { s.left = p.x + 4 * Math.sin(t * .2 + p.ph) + "%"; s.opacity = .35 + .15 * Math.sin(t * .5 + p.ph); }
+    if (p.type === "flame") { s.left = p.ox + .6 * Math.sin(t * 3 + p.ph) + "%"; s.top = p.oy - 1.5 * Math.abs(Math.sin(t * p.sp * 3 + p.ph)) + "%";
+                              s.opacity = .55 + .45 * Math.sin(t * 4 * p.sp + p.ph); }
+    if (p.type === "sparkle") { const v = Math.sin(t * p.sp * 1.5 + p.ph); s.opacity = Math.max(0, v * .9 + .1);
+                                if (v < -.95) { s.left = (p.ox = Math.min(98, Math.max(2, p.x + (Math.random() - .5) * 8))) + "%"; } }
+    if (p.type === "firework") {  // bursts: dots fly out from the centre and fade, then start again
+      const k = ((t * .45 * p.sp + p.ph) % 1), a = p.ph * 7, r = k * (p.h.spread || 8);
+      s.left = p.h.x + Math.cos(a) * r + "%"; s.top = p.h.y + Math.sin(a) * r * 1.33 + k * k * 3 + "%"; s.opacity = 1 - k;
+    }
+    if (p.type === "snow") { p.y += .04 * p.sp; if (p.y > 102) { p.y = -2; p.x = Math.random() * 100; }
+                             s.left = p.x + .5 * Math.sin(t + p.ph) + "%"; s.top = p.y + "%"; s.opacity = .8; }
+  }
+  requestAnimationFrame(fxLoop);
+})(0);
+
 function render(speak) {
   $("progress").innerHTML = STEPS.map((_, i) => HALLOW.replace("<svg", `<svg class="${i < st.step ? "done" : i === st.step ? "now" : ""}"`)).join("");
   const s = $("screen"), [name, text, hint] = current();
   if (inPrologue()) {  // the comic before the oath, one page per tap
     const k = st.pro || 0;
     $("sub").textContent = `Пролог · ${k + 1} из ${PRO.length}`;
-    s.innerHTML = `<img class="comic" src="${PRO[k].img}" alt="">
+    s.innerHTML = `${comic(PRO[k].img)}
       <div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button></div>
       <button class="go" id="next">Дальше</button>`;
@@ -378,7 +437,7 @@ function render(speak) {
       <button class="go" id="go">Открыть карту</button><div class="msg" id="msg"></div>`;
   } else if (st.step >= STEPS.length) {
     $("sub").textContent = "Шалость удалась!";
-    s.innerHTML = `${Q.final_img ? `<img class="comic" src="${Q.final_img}" alt="">` : ""}<div class="riddle">${inked(Q.final)}</div>
+    s.innerHTML = `${Q.final_img ? comic(Q.final_img) : ""}<div class="riddle">${inked(Q.final)}</div>
       <div class="label">Где спрятаны Дары Смерти</div>
       <div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button><button class="link" id="hintbtn">Не могу найти</button></div>
@@ -396,6 +455,7 @@ function render(speak) {
       ${parts.map(p => `<input class="ans" autocomplete="off" autocapitalize="off" placeholder="${esc(p.label)}...">`).join("<br>")}<br>
       <button class="go" id="go">Проверить</button><div class="msg" id="msg"></div>`;
   }
+  startFx();
   $("again").onclick = () => say(name, st.step >= STEPS.length ? Q.final + " " + text : text);
   if ($("hintbtn")) $("hintbtn").onclick = () => { $("hintbox").innerHTML = `<div class="hint">${esc(hint)}</div>`; };
   if ($("go")) {
