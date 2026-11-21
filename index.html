@@ -70,6 +70,7 @@
   .riddle { font-family: var(--hand); font-size: 25px; line-height: 1.35; color: #2b1606; white-space: pre-line;
             margin: 8px 0 6px; padding: 14px 6px; min-height: 90px; position: relative; }
   .riddle span { opacity: 0; animation: ink .5s forwards; }
+  .comic { display: block; width: 100%; border-radius: 4px; border: 3px solid var(--edge); box-shadow: 0 3px 12px #3a221066; margin-top: 10px; }
   @keyframes ink { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
   .tools { display: flex; justify-content: center; gap: 18px; margin-bottom: 12px; }
   .link { font: italic 17px var(--serif); color: #5d3b18; background: none; border: 0; padding: 4px; cursor: pointer;
@@ -349,7 +350,9 @@ const HALLOW = '<svg viewBox="0 0 100 100" fill="none" stroke="#3a2210" stroke-w
 const inked = t => [...t].map((ch, i) => ch === "\n" ? "\n" : `<span style="animation-delay:${i * 28}ms">${esc(ch)}</span>`).join("");
 
 // ---------- the quest ----------
+const PRO = Q.prologue || [], inPrologue = () => st.step < 0 && (st.pro || 0) < PRO.length;
 function current() {  // [audio name, riddle, hint] of what is on screen now
+  if (inPrologue()) return [`pro${(st.pro || 0) + 1}`, PRO[st.pro || 0].text, ""];
   if (st.step < 0) return ["intro", Q.intro, ""];
   if (st.step === 0) return ["start", Q.start, ""];
   return [`place${st.step}`, STEPS[st.step - 1].place, STEPS[st.step - 1].hint];
@@ -358,7 +361,15 @@ function current() {  // [audio name, riddle, hint] of what is on screen now
 function render(speak) {
   $("progress").innerHTML = STEPS.map((_, i) => HALLOW.replace("<svg", `<svg class="${i < st.step ? "done" : i === st.step ? "now" : ""}"`)).join("");
   const s = $("screen"), [name, text, hint] = current();
-  if (st.step < 0) {
+  if (inPrologue()) {  // the comic before the oath, one page per tap
+    const k = st.pro || 0;
+    $("sub").textContent = `Пролог · ${k + 1} из ${PRO.length}`;
+    s.innerHTML = `<img class="comic" src="${PRO[k].img}" alt="">
+      <div class="riddle">${inked(text)}</div>
+      <div class="tools"><button class="link" id="again">🔊 Послушать</button></div>
+      <button class="go" id="next">Дальше</button>`;
+    $("next").onclick = () => { st.pro = k + 1; save(); sfx("whoosh"); render(true); scrollTo({ top: 0, behavior: "smooth" }); };
+  } else if (st.step < 0) {
     $("sub").textContent = "Карта откроется лишь тому, кто знает клятву";
     s.innerHTML = `<div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button></div>
@@ -366,7 +377,7 @@ function render(speak) {
       <button class="go" id="go">Открыть карту</button><div class="msg" id="msg"></div>`;
   } else if (st.step >= STEPS.length) {
     $("sub").textContent = "Шалость удалась!";
-    s.innerHTML = `<div class="riddle">${inked(Q.final)}</div>
+    s.innerHTML = `${Q.final_img ? `<img class="comic" src="${Q.final_img}" alt="">` : ""}<div class="riddle">${inked(Q.final)}</div>
       <div class="label">Где спрятаны Дары Смерти</div>
       <div class="riddle">${inked(text)}</div>
       <div class="tools"><button class="link" id="again">🔊 Послушать</button><button class="link" id="hintbtn">Не могу найти</button></div>
